@@ -206,12 +206,14 @@
               label="客户代表">
             </el-table-column>
             <el-table-column
-              prop="serviceStartMonth:null"
+              prop="serviceStartMonth"
               label="服务开始月">
+              <template slot-scope="scope" v-if="scope.row.serviceStartMonth">{{scope.row.serviceStartMonth| dateYM}}</template>
             </el-table-column>
             <el-table-column
-              prop="taxDate:null"
+              prop="taxDate"
               label="当前报税期">
+               <template slot-scope="scope" v-if="scope.row.taxDate">{{scope.row.taxDate| dateYM}}</template>
             </el-table-column>
             <el-table-column
               prop="price"

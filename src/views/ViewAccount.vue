@@ -2,7 +2,7 @@
   <div class="view-account">
     <el-row>
       <el-col :span="20">
-        <p class="view-account-title">公司名称</p>
+        <p class="view-account-title">{{account.customerName}}</p>
        </el-col>
       <el-col :span="4">
         <el-button @click="handleModifyViewAccount">修改内容</el-button>
@@ -110,20 +110,39 @@
           <el-form label-width="120px" class="demo-ruleForm">
             <el-row>
               <el-col :span="12">
-                <el-form-item label="身份证复印件: ">
-                  <img v-for="(url, index) in getImageUrls('身份证复印件图片')" :key="index" :src="url" style="width: 100px;">
+                <el-form-item label="身份证复件: ">
+                  <!-- <img v-for="(url, index) in getImageUrls('身份证复印件图片')" :key="index" :src="url" style="width: 100px;"> -->
+                  <el-upload
+                   action
+                   disabled
+                  :on-preview="handlePreviewPicture"
+                  :file-list="uploadFiles.idCardImgList"
+                  list-type="picture">
+                  </el-upload>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="营业执照复印件: ">
-                  <img v-for="(url, index) in getImageUrls('营业执照复印件')" :key="index" :src="url" style="width: 100px;">
+                <el-form-item label="营业执照复件: ">
+                  <el-upload
+                    disabled
+                    action
+                  :on-preview="handlePreviewPicture"
+                  :file-list="uploadFiles.businessImgList"
+                  list-type="picture">
+                </el-upload>
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row>
               <el-col :span="12">
                 <el-form-item label="合同原件: ">
-                  <img v-for="(url,index) in getImageUrls('合同原件')" :key="index" :src="url" style="width: 100px;">
+                <el-upload
+                    action
+                    disabled
+                  :on-preview="handlePreviewPicture"
+                  :file-list="uploadFiles.contractImgList"
+                  list-type="picture">
+                </el-upload>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -140,19 +159,7 @@
             <el-row>
               <el-col :span="8">
                 <el-form-item label="月服务费: ">
-                  <span>{{ account.newestTask ? account.newestTask.price : '' }}</span>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="服务周期: ">
-                  <span>{{ account.newestTask ? account.newestTask.number : '' }}月</span>
-                </el-form-item>
-              </el-col>
-            </el-row>
-            <el-row>
-              <el-col :span="8">
-                <el-form-item label="服务开始月: ">
-                  <span>{{ account.newestTask ? (account.newestTask.serviceStartMonth | dateYM) : '' }}</span>
+                  <span v-if="account.newestTask && account.newestTask.price">{{account.newestTask.price }}</span>
                 </el-form-item>
               </el-col>
               <el-col :span="8">
@@ -163,13 +170,25 @@
             </el-row>
             <el-row>
               <el-col :span="8">
+                <el-form-item label="服务周期: ">
+                  <span>{{ account.newestTask ? account.newestTask.number : '' }}月</span>
+                </el-form-item>
+              </el-col>
+               <el-col :span="8">
                 <el-form-item label="剩余服务月: ">
-                  <span>{{ account.newestTask ? getLeftMonths(account.newestTask) : '' }}</span>
+                  <span>{{ account.newestTask ? getLeftMonths(account.newestTask) : '' }}月</span>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row>
+              <el-col :span="8">
+                <el-form-item label="服务开始月: ">
+                  <span v-if="account.newestTask && account.newestTask.serviceStartMonth">{{account.newestTask.serviceStartMonth | dateYM}}</span>
                 </el-form-item>
               </el-col>
               <el-col :span="8">
                 <el-form-item label="当前报税期: ">
-                  <span>{{ account.newestTask ? (account.newestTask.taxDate | dateYM) : '' }}</span>
+                  <span v-if="account.newestTask && account.newestTask.taxDate">{{account.newestTask.taxDate | dateYM }}</span>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -177,12 +196,12 @@
         </el-collapse-item>
         <img class="base-information-icon" src="../assets/images/newAccountPage/arrow.png" alt="">
         <el-collapse-item title="流程列表: " name="4">
-          <p style="float:right;font-size:20px">总金额: {{getAddMoney(price)}}</p>
+          <p style="float:right;font-size:20px">总金额: ￥{{getAddMoney()}}</p>
           <el-table
             :data="account.taskList"
             style="width: 100%">
             <el-table-column
-              type="index">
+              type="index" label="序号">
             </el-table-column>
             <el-table-column
               prop="productName"
@@ -319,6 +338,9 @@
                 <el-button>取消</el-button>
               </div>
             </el-dialog>
+             <el-dialog :visible.sync="dialogVisible">
+              <img width="100%" :src="dialogImageUrl" alt="">
+            </el-dialog>
           </div>
         </el-collapse-item>
       </div>
@@ -340,8 +362,15 @@ export default {
   },
   data () {
     return {
+      dialogImageUrl: '',
+      dialogVisible: false,
+      uploadFiles: {
+        idCardImgList: [],
+        businessImgList: [],
+        contractImgList: []
+      },
       customerId: '',
-      activeNames: [''],
+      activeNames: ['1', '2', '3', '4', '5'],
       idCardImages: [''],
       businessLicenseImages: [''],
       contractImages: [''],
@@ -357,6 +386,7 @@ export default {
     this.getCustomer()
     this.getUsers()
     this.getProducts()
+    this.initFileList()
   },
   computed: {
     isRoyaltyCoefficientShow () {
@@ -372,9 +402,31 @@ export default {
     })
   },
   methods: {
+    // 预览图片
+    handlePreviewPicture (file) {
+      this.dialogImageUrl = file.url
+      this.dialogVisible = true
+    },
+    // 文件列表初始化
+    initFileList () {
+      for (const item of this.account.fileList) {
+        const picture = {
+          name: item.fileType,
+          url: item.fileUrl.replace('/data/wwwroot/', 'http://'),
+          id: item.fileId
+        }
+        if (picture.name === '身份证复印件图片') {
+          this.uploadFiles.idCardImgList.push(picture)
+        } else if (picture.name === '合同原件') {
+          this.uploadFiles.contractImgList.push(picture)
+        } else if (picture.name === '营业执照复印件') {
+          this.uploadFiles.businessImgList.push(picture)
+        }
+      }
+    },
     // 累加
     getAddMoney () {
-      return this.account.taskList.map(({ price }) => price).reduce((x, y) => x + y)
+      return this.account.taskList.map(({ price, number }) => price * number).reduce((x, y) => x + y)
     },
     getImageUrls (type) {
       const files = this.account.fileList

@@ -1,4 +1,4 @@
-import { uploadFile } from '../../api/file'
+import { uploadFile, removeFile } from '../../api/file'
 
 const state = {}
 
@@ -11,6 +11,12 @@ const actions = {
       return Promise.reject(msg)
     } else {
       return Promise.resolve(file)
+    }
+  },
+  async removeFile ({ commit }, fileId) {
+    const { data: { code, msg } } = await removeFile(fileId)
+    if (code !== 0) {
+      return Promise.reject(msg)
     }
   }
 }

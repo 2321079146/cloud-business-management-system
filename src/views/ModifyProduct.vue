@@ -9,7 +9,8 @@
              <el-form-item label="产品板块: " required>
               <div class="block">
                 <el-cascader
-                  v-model="productMoudleName"
+                  v-model="updateProductForm.productMoudleName"
+                  :props="{ expandTrigger: 'hover' }"
                   @change="handleProductModuleChange"
                   :options="options">
                 </el-cascader>
@@ -18,37 +19,38 @@
           </el-col>
           <el-col :span="6">
             <el-form-item label="产品名称: " required>
-              <el-input v-model="updateProductForm"></el-input>
+              <el-input v-model="updateProductForm.productName"></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="指导价格(元): " required>
               <el-col :span="11">
                 <el-form-item prop="">
-                  <el-input></el-input>
+                  <el-input v-model="productPriceMin"></el-input>
                 </el-form-item>
               </el-col>
               <el-col class="line" :span="2" style="text-align: center;">至</el-col>
               <el-col :span="11">
                 <el-form-item>
-                  <el-input></el-input>
+                  <el-input v-model="productPriceMax"></el-input>
                 </el-form-item>
               </el-col>
             </el-form-item>
           </el-col>
         </el-row>
         <el-row>
-          <el-col :span="6">
+          <!-- <el-col :span="12">
             <el-form-item label="产品单位: " required>
               <el-select placeholder="次" style="width:290px;">
+                <el-option label="年"></el-option>
                 <el-option label="月"></el-option>
                 <el-option label="人/天"></el-option>
               </el-select>
             </el-form-item>
-          </el-col>
-          <el-col :span="6">
+          </el-col> -->
+          <el-col :span="12">
             <el-form-item label="概述: ">
-              <el-input placeholder="请输入"></el-input>
+              <el-input v-model="updateProductForm.productSummy" placeholder="请输入"></el-input>
             </el-form-item>
           </el-col>
         </el-row>
@@ -60,7 +62,7 @@
             <froala id="edit" :tag="'textarea'" :config="config" v-model="model"></froala>
           </el-card>
         </el-row>
-        <el-button>取 消</el-button>
+        <el-button @click="cancelProduct">取 消</el-button>
         <el-button type="primary" @click="handleUpdateProductButtonClick">确 定</el-button>
       </el-form>
     </div>
@@ -78,11 +80,13 @@ export default {
   data () {
     return {
       productId: 1,
+      productPriceMin: '',
+      productPriceMax: '',
       updateProductForm: {
-
+        productName: '',
+        productSummy: ''
       },
       productMoudleName: '',
-      value: [],
       options: [{
         value: '工商服务',
         label: '工商服务',
@@ -95,6 +99,9 @@ export default {
         }, {
           value: '注销',
           label: '注销'
+        }, {
+          value: '地址托管',
+          label: '地址托管'
         }, {
           value: '其他',
           label: '其他'
@@ -234,6 +241,14 @@ export default {
           label: '其他'
         }]
       }],
+      aaaa: [{
+        value: 'zhinan',
+        label: '指南',
+        children: [{
+          value: 'shejiyuanze',
+          label: '设计原则'
+        }]
+      }],
       config: {
         events: {
           initialized: function () {
@@ -245,37 +260,51 @@ export default {
     }
   },
   methods: {
+    cancelProduct () {
+      this.$router.push({ path: '/service-product' })
+    },
     getProduct () {
-      this.$store.dispatch('getProductById', this.productId)
+      this.$store.dispatch('getProductById', this.productId).then(() => {
+        this.updateProductForm.productId = this.product.productId
+        this.updateProductForm.productName = this.product.productName
+        if (this.product.productPrice && this.product.productPrice.split('-').length === 2) {
+          this.productPriceMin = this.product.productPrice.split('-')[0]
+          this.productPriceMax = this.product.productPrice.split('-')[1]
+        }
+        this.updateProductForm.productSummy = this.product.productSummy
+        this.updateProductForm.productMoudleName = this.product.productMoudleName.split(' / ')
+      })
     },
     handleProductModuleChange (productModule) {
-      this.createProductForm.productMoudleName = `${productModule[0]} / ${productModule[1]}`
       if (productModule[1] === '代理记账') {
-        this.createProductForm.isLongTerm = '0'
+        this.updateProductForm.isLongTerm = '0'
+      } else if (productModule[1] === '地址托管') {
+        this.updateProductForm.isLongTerm = '2'
+      } else {
+        this.updateProductForm.isLongTerm = '1'
       }
     },
     handleUpdateProductButtonClick () {
-      this.$store.dispatch('updateProduct', this.product).then(({ data: response }) => {
-        const { code, msg } = response
-        if (code === 0) {
-          Message({
-            message: '保存成功',
-            type: 'success'
-          })
-          this.$route.push({ path: '/service-product' })
-        } else {
-          Message({
-            message: msg,
-            type: 'error'
-          })
-        }
+      this.updateProductForm.productPrice = this.productPriceMin + '-' + this.productPriceMax
+      this.handleProductModuleChange(this.updateProductForm.productMoudleName)
+      this.updateProductForm.productMoudleName = this.updateProductForm.productMoudleName[0] + ' / ' + this.updateProductForm.productMoudleName[1]
+      this.$store.dispatch('updateProduct', this.updateProductForm).then(() => {
+        Message({
+          message: '修改成功',
+          type: 'success'
+        })
+        this.$router.push({ path: '/service-product' })
+      }).catch(message => {
+        Message({
+          message,
+          type: 'error'
+        })
       })
     }
   },
   mounted () {
     this.productId = this.$route.query.productId
     this.getProduct()
-    this.updateProductForm = this.product
   },
   computed: {
     ...mapState({

@@ -12,7 +12,7 @@
             </el-col>
             <el-col :span="8">
               <el-form-item label="性别: " prop="name">
-                <el-radio-group v-model="personalCenterForm.resource">
+                <el-radio-group v-model="updateUserForm.sex">
                   <el-radio label="男"></el-radio>
                   <el-radio label="女"></el-radio>
                 </el-radio-group>
@@ -52,7 +52,7 @@
             </el-col>
             <el-col :span="8">
               <el-form-item label="身份: " prop="name">
-                <span>{{userInfo.roleNameList[0]}}</span>
+                <span v-if="userInfo.roleNameList">{{userInfo.roleNameList[0]}}</span>
               </el-form-item>
             </el-col>
           </el-row>
@@ -63,30 +63,30 @@
           <el-form label-position="top" label-width="120px">
             <el-row>
               <el-col :span="24">
-                <el-form-item label="旧密码: " required="">
+                <el-form-item label="旧密码: " required>
                   <el-input v-model="modifyPassWord.password"></el-input>
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row>
               <el-col :span="24">
-                <el-form-item label="新密码: " required="">
-                  <el-input v-model="modifyPassWord.newPassword"></el-input>
+                <el-form-item label="新密码: " required>
+                  <el-input show-password v-model="modifyPassWord.newPassword"></el-input>
                 </el-form-item>
               </el-col>
             </el-row>
-            <el-row>
+            <!-- <el-row>
               <el-col :span="24">
                 <el-form-item label="确认新密码: " required="">
                   <el-input v-model="modifyPassWord.newPassword"></el-input>
                 </el-form-item>
               </el-col>
-            </el-row>
+            </el-row> -->
           </el-form>
-          <el-button>取消</el-button>
+          <el-button @click="changePasswordDialogVisible = false">取消</el-button>
           <el-button type="primary" @click="handleUpdatePosswordButtonClick">保存</el-button>
         </el-dialog>
-        <el-button>取消</el-button><br><br><br><br>
+        <el-button @click="toHomePage">取消</el-button><br><br><br><br>
       </div>
   </div>
 </template>
@@ -108,13 +108,11 @@ export default {
       userId: 1,
       updateUserForm: {
         roleNameList: [],
-        userId: 2,
-        userName: '孟星驰',
-        salt: 'LQ9IhLYJymjaVXwZtHdh',
-        email: '2321@qq.com',
-        mobile: '18913932276',
-        status: 1,
-        createTime: '2020-03-10 10:05:09',
+        sex: '',
+        userId: '',
+        userName: '',
+        email: '',
+        mobile: '',
         tenantId: 1,
         deptName: '',
         deptId: ''
@@ -126,6 +124,9 @@ export default {
     }
   },
   methods: {
+    toHomePage () {
+      this.$router.push({ path: '/home' })
+    },
     onSubmit () {
       console.log('submit!')
     },
@@ -135,6 +136,7 @@ export default {
     getUserInfo () {
       this.$store.dispatch('getSysInfo').then(() => {
         this.updateUserForm.userId = this.userInfo.user.userId
+        this.updateUserForm.sex = this.userInfo.user.sex
         this.updateUserForm.userName = this.userInfo.user.userName
         this.updateUserForm.status = this.userInfo.user.status
         this.updateUserForm.mobile = this.userInfo.user.mobile
@@ -142,6 +144,8 @@ export default {
         this.updateUserForm.deptName = this.userInfo.user.deptName
         this.updateUserForm.deptId = this.userInfo.user.deptId
         this.updateUserForm.roleNameList = this.userInfo.roleNameList
+        this.updateUserForm.roleIdList = this.userInfo.user.roleIdList
+        console.log(this.updateUserForm)
       })
     },
     handleUpdateUserButtnClick () {

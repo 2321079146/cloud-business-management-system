@@ -1,4 +1,5 @@
 import request from './request'
+// import { Password } from 'ant-design-vue/types/input/password'
 
 const updateSysInfo = user => request({
   url: '/sys/user/update',
@@ -8,8 +9,9 @@ const updateSysInfo = user => request({
 const getSysInfo = () => request({
   url: '/sys/user/info'
 })
-const updatePassWord = userId => request({
-  url: `/sys/user/password/${userId}`
+const updatePassWord = password => request({
+  url: '/sys/user/password',
+  params: password
 })
 const getUserList = () => request({
   url: '/sys/user/list'

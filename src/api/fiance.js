@@ -32,7 +32,7 @@ const getDiaryReportList = data => request({
 const getTotalCash = data => request({
   url: '/fiance/total',
   method: 'POST',
-  data: { type: data.type }
+  data: data
 })
 
 const check = checkForm => request({

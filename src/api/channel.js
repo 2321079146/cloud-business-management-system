@@ -27,11 +27,15 @@ const getChannelList = (limit, page) => request({
     page
   }
 })
+const getAllChannels = () => request({
+  url: '/channel/all'
+})
 
 export {
   getChannelInformation,
   getChannelList,
   createChannel,
   updateChannel,
-  deleteChannel
+  deleteChannel,
+  getAllChannels
 }

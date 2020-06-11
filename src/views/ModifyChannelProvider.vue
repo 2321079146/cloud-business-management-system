@@ -58,7 +58,7 @@
         </el-col>
       </el-row><br><br>
       <el-button type="primary" @click="handleUpdateChannelButtonClick">保存</el-button>
-      <el-button>取消</el-button>
+      <el-button @click="cancelChannel">取消</el-button>
     </div>
     <br><br><br><br>
   </div>
@@ -84,8 +84,11 @@ export default {
     }
   },
   methods: {
+    cancelChannel () {
+      this.$router.push({ path: '/channel-dealer-management' })
+    },
     getChannel () {
-      this.$store.dispatch('getChannelById', this.channelId).then(() => {
+      this.$store.dispatch('getChannelInformation', this.channelId).then(() => {
         this.updateChannelForm.channelId = this.channel.channelId
         this.updateChannelForm.name = this.channel.name
         this.updateChannelForm.linkerName = this.channel.linkerName

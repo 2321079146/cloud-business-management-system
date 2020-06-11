@@ -18,6 +18,8 @@
           <el-col :span="12">
             <div class="block">
               <el-date-picker
+                v-model="fianceTimevalue"
+                @change="selectFianceTime"
                 type="date"
                 placeholder="选择日期">
               </el-date-picker>
@@ -66,10 +68,10 @@
           width="55">
         </el-table-column>
         <el-table-column
-          prop="createTime"
+          prop="fianceTime"
           :show-overflow-tooltip="true"
           label="收支时间">
-          <template slot-scope="scope">{{scope.row.date| dateYMDHMSFormat}}</template>
+          <template slot-scope="scope">{{scope.row.fianceTime| dateYMDHMSFormat}}</template>
         </el-table-column>
         <el-table-column
           prop="comment"
@@ -100,7 +102,7 @@
           </template>
         </el-table-column>
         <el-table-column
-          prop="createUserName"
+          prop="fianceUserName"
           label="收支人员">
         </el-table-column>
         <el-table-column
@@ -157,13 +159,14 @@ export default {
   },
   data () {
     return {
+      fianceTimevalue: '',
       multipleSelection: [],
       getFiancesForm: {
         page: 1,
         limit: 10
       },
       getTotalCashForm: {
-        type: ''
+        // type: ''
       },
       accountingStatus: [
         {
@@ -182,6 +185,16 @@ export default {
     }
   },
   methods: {
+    selectFianceTime () {
+      const fianceTime = this.$moment(this.fianceTimevalue).format('YYYY-MM-DD')
+      console.log(fianceTime)
+      if (fianceTime !== '') {
+        this.getFiancesForm.fianceDate = [fianceTime, fianceTime]
+      }
+      this.getFianceList()
+      this.getTotalCashForm.fianceDate = [fianceTime, fianceTime]
+      this.getTotalCash()
+    },
     // 根据状态筛选列表
     handleStatusChange (statusValue) {
       if (statusValue === '2') {
@@ -213,6 +226,7 @@ export default {
     },
     getFianceList () {
       this.$store.dispatch('getDiaryReportList', this.getFiancesForm)
+      console.log(this.fianceList)
     },
     getDeptsList () {
       // 对应actions 里面的名字
@@ -320,18 +334,18 @@ export default {
 }
 .amount-received-show{
   color: #009900;
-  font-size: 14px;
+  /* font-size: 14px; */
 }
 .expenditure-show{
   color: #FF0000;
-  font-size: 14PX;
+  /* font-size: 14PX; */
 }
 .calculating-balance-show{
   color: #FF9900;
-  font-size: 14px;
+  /* font-size: 14px; */
 }
 .total-tips{
-  font-size: 14px;
+  /* font-size: 14px; */
   color: #666666;
   padding: 0px 50px;
 }

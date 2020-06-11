@@ -111,8 +111,15 @@ const actions = {
   }
 }
 
+const getters = {
+  taskDetail () {
+    return state.task
+  }
+}
+
 export default {
   state,
   actions,
-  mutations
+  mutations,
+  getters
 }

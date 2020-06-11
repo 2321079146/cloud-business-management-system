@@ -84,6 +84,21 @@
                   <el-input v-model="createFianceForm.money"></el-input>
                 </el-form-item>
               </el-col>
+              <el-col :span="12">
+                <el-form-item label="收支账户" required>
+                  <el-select
+                    v-model="createFianceForm.fianceAccountId"
+                    @change="changeFianceAccount"
+                    placeholder="请选择">
+                    <el-option
+                      v-for="item in fianceAccountList"
+                      :key="item.tenantCollectAccountId"
+                      :label="item.accountName"
+                      :value="item.tenantCollectAccountId">
+                    </el-option>
+                  </el-select>
+                </el-form-item>
+              </el-col>
             </el-row>
             <el-row>
               <el-col :span="12">
@@ -95,10 +110,10 @@
                 </el-form-item>
               </el-col>
               <el-col :span="12" required>
-                <el-form-item label="审核人:" v-show="radio === 1">
+                <el-form-item label="审核人:" v-show="radio === 1" required="">
                   <el-select
                     v-model="createFianceForm.checkUserId"
-                    @change="handleEditTaskFormFinancialAdviserSelectChange" style="width: 100%">
+                    @change="handleEditCheckUserName" style="width: 100%">
                     <el-option
                       v-for="user in allUsers"
                       :key="user.userId"
@@ -148,7 +163,9 @@ export default {
         comment: '',
         fianceTypeValue: '',
         fianceTypeName: '',
-        fianceTime: ''
+        fianceTime: '',
+        fianceAccountId: '',
+        fianceAccountName: ''
       },
       fianceTypes: [
         {
@@ -165,6 +182,12 @@ export default {
     }
   },
   methods: {
+    changeFianceAccount (id) {
+      this.createFianceForm.fianceAccountName = this.fianceAccountList.filter(({ tenantCollectAccountId }) => tenantCollectAccountId === id)[0].accountName
+    },
+    getCollectAccounts () {
+      this.$store.dispatch('getTenantAccountList', this.getTenantAccountListForm)
+    },
     getDepartmentName (id) {
       return this.departments.filter(({ deptId }) => deptId === id)[0].name
     },
@@ -195,7 +218,8 @@ export default {
     createFiance () {
       this.isDiaryReport = true
       const date = this.submitDate
-      this.createFianceForm.fianceTime = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDay()}`
+      console.log(date)
+      this.createFianceForm.fianceTime = this.$moment(date).format('YYYY-MM-DD')
       this.$store.dispatch('createFiance', this.createFianceForm).then(() => {
         Message({
           message: '保存成功',
@@ -218,6 +242,9 @@ export default {
     handleEditTaskFormFinancialAdviserSelectChange (id) {
       this.createFianceForm.fianceUserName = this.getUserName(id)
     },
+    handleEditCheckUserName (id) {
+      this.createFianceForm.checkUserName = this.getUserName(id)
+    },
     isShowCheckUser () {
       if (this.createFianceForm.checkUserId === '1') {
         return false
@@ -229,12 +256,14 @@ export default {
   mounted () {
     this.getDepartments()
     this.getUsers()
+    this.getCollectAccounts()
   },
   computed: {
     ...mapState({
       departments: state => state.department.depts,
       // 获取所有用户
-      allUsers: state => state.sysUser.users.list
+      allUsers: state => state.sysUser.users.list,
+      fianceAccountList: state => state.tenantCollectAccount.tenantAccounts
     })
   }
 }

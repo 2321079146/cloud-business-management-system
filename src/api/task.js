@@ -13,8 +13,9 @@ const getOnceTaskList = data => request({
 })
 // 删除订单
 const deleteTask = taskId => request({
-  url: `/task/delete${taskId}`,
-  method: 'delete'
+  url: '/task/delete',
+  method: 'delete',
+  params: { taskId: taskId }
 })
 const createtask = createtaskForm => request({
   url: '/task/add',
@@ -24,10 +25,10 @@ const createtask = createtaskForm => request({
 const getTaskDetail = taskId => request({
   url: `/task/detail/${taskId} `
 })
-const updateTask = taskId => request({
+const updateTask = updateTaskForm => request({
   url: '/task/update',
   method: 'POST',
-  data: taskId
+  params: updateTaskForm
 })
 // 交接任务
 const transferTask = transferTaskForm => request({

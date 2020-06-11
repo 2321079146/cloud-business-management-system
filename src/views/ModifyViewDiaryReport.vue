@@ -78,7 +78,7 @@
               </el-col>
               <el-col :span="10">
                 <el-form-item label="收支时间" required>
-                  <el-input v-model="report.fianceTime" disabled></el-input>
+                  <el-date-picker v-model="report.fianceTime" value-format="yyyy-MM-dd" disabled></el-date-picker>
                   <!-- <span class="block">
                     <el-date-picker
                       v-model="submitDate"
@@ -96,6 +96,21 @@
                   <el-input v-model="report.money" disabled></el-input>
                 </el-form-item>
               </el-col>
+              <el-col :span="10">
+                <el-form-item label="收支账户" required>
+                  <el-select
+                    v-model="updateFianceForm.fianceAccountId"
+                    @change="changeFianceAccount"
+                    placeholder="请选择">
+                    <el-option
+                      v-for="item in fianceAccountList"
+                      :key="item.tenantCollectAccountId"
+                      :label="item.accountName"
+                      :value="item.tenantCollectAccountId">
+                    </el-option>
+                  </el-select>
+                </el-form-item>
+              </el-col>
             </el-row>
             <el-row>
               <el-col :span="10">
@@ -110,15 +125,39 @@
               </el-col>
             </el-row>
             <el-row>
-              <el-col :span="20">
+              <el-col :span="10">
                 <el-form-item label="摘要: " prop="pass">
                   <el-input type="textarea" v-model="updateFianceForm.comment"></el-input>
                 </el-form-item>
               </el-col>
             </el-row>
+            <el-row>
+              <el-col :span="10">
+                <el-form-item label="是否需要其他人审核" required>
+                  <el-radio-group v-model="radio">
+                    <el-radio :label="1">是</el-radio>
+                    <el-radio :label="2">否</el-radio>
+                  </el-radio-group>
+                </el-form-item>
+              </el-col>
+              <el-col :span="10" required>
+                <el-form-item label="审核人:" v-show="radio === 1" required="">
+                  <el-select
+                    v-model="updateFianceForm.checkUserId"
+                    @change="handleEditCheckUserName" style="width: 100%">
+                    <el-option
+                      v-for="user in allUsers"
+                      :key="user.userId"
+                      :label="user.userName"
+                      :value="user.userId">
+                    </el-option>
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
           </el-form>
           <el-button type="primary" @click="handleUpdateFianceButtonClick">确 认</el-button>
-          <el-button>取 消</el-button>
+          <el-button  @click="handleCancelClick">取 消</el-button>
   </div>
 </template>
 <script>
@@ -131,6 +170,7 @@ export default {
   },
   data () {
     return {
+      radio: 1,
       // fianceId: this.$route.query.fianceId,
       fianceId: 1,
       updateFianceForm: {
@@ -145,7 +185,11 @@ export default {
         balance: '',
         createUserName: '',
         comment: '',
-        fianceTime: ''
+        fianceTime: '',
+        checkUserId: '',
+        checkUserName: '',
+        fianceAccountId: '',
+        fianceAccountName: ''
       },
       fianceTypes: [
         {
@@ -161,9 +205,24 @@ export default {
     }
   },
   methods: {
+    changeFianceAccount (id) {
+      this.updateFianceForm.fianceAccountName = this.fianceAccountList.filter(({ tenantCollectAccountId }) => tenantCollectAccountId === id)[0].accountName
+    },
+    getCollectAccounts () {
+      this.$store.dispatch('getTenantAccountList', this.getTenantAccountListForm)
+    },
+    handleEditCheckUserName (id) {
+      this.updateFianceForm.checkUserName = this.allUsers.filter(({ userId }) => userId === id)[0].userName
+    },
+    handleCancelClick () {
+      this.$router.push({ path: '/diary-report' })
+    },
     getFiance () {
       this.$store.dispatch('getFianceById', this.fianceId).then(() => {
+        console.log(this.report)
         this.updateFianceForm.fianceId = this.report.fianceId
+        this.updateFianceForm.checkUserId = this.report.checkUserId
+        this.updateFianceForm.checkUserName = this.report.checkUserName
         this.updateFianceForm.customerName = this.report.customerName
         this.updateFianceForm.customerRelName = this.report.customerRelName
         this.updateFianceForm.fianceDeptName = this.report.fianceDeptName
@@ -176,6 +235,8 @@ export default {
         // this.updateFianceForm.createTime = this.report.createTime
         this.updateFianceForm.fianceTime = this.report.fianceTime
         this.updateFianceForm.comment = this.report.comment
+        this.updateFianceForm.fianceAccountId = this.report.fianceAccountId
+        this.updateFianceForm.fianceAccountName = this.report.fianceAccountName
       })
     },
     handleUpdateFianceButtonClick () {
@@ -185,7 +246,7 @@ export default {
       this.updateFianceForm.fianceDeptName = this.getDepartmentName(id)
     },
     handleEditTaskFormFinancialAdviserSelectChange (id) {
-      this.updateFianceForm.checkUserName = this.getUsers(id)
+      this.updateFianceForm.fianceUserName = this.getUsers(id)
     },
     getFianceTypeName (value) {
       if (value === '0') {
@@ -203,8 +264,11 @@ export default {
       this.$store.dispatch('getDeptList')
     },
     modifyFiance () {
-      const date = this.submitDate
-      this.updateFianceForm.fianceTime = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDay()}`
+      if (this.radio === '2') {
+        this.updateFianceForm.checkUserId = ''
+        this.updateFianceForm.checkUserName = ''
+      }
+      this.updateFianceForm.fianceTime = this.$moment(this.updateFianceForm.fianceTime).format('YYYY-MM-DD')
       this.$store.dispatch('updateFiance', this.updateFianceForm).then(() => {
         Message({
           message: '修改成功',
@@ -224,13 +288,15 @@ export default {
     this.getUsers()
     this.fianceId = this.$route.query.fianceId
     this.getFiance()
+    this.getCollectAccounts()
   },
   computed: {
     ...mapState({
       report: state => state.fiance.fiance,
       departments: state => state.department.depts,
       // 获取所有用户
-      allUsers: state => state.sysUser.users.list
+      allUsers: state => state.sysUser.users.list,
+      fianceAccountList: state => state.tenantCollectAccount.tenantAccounts
     })
   }
 }

@@ -10,6 +10,13 @@ const uploadFile = (formData, uploadFileForm) => request({
   params: uploadFileForm
 })
 
+const removeFile = fileId => request({
+  url: '/file/delete',
+  method: 'DELETE',
+  params: { fileId: fileId }
+})
+
 export {
-  uploadFile
+  uploadFile,
+  removeFile
 }

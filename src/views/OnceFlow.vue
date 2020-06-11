@@ -179,6 +179,7 @@
             </el-row>
           </el-card> -->
           <el-table
+            v-if="tasks"
             ref="multipleTable"
             :data="tasks.rows"
             tooltip-effect="dark"
@@ -230,7 +231,7 @@
           </el-table>
         </el-tab-pane>
       </el-tabs>
-      <div style="margin-top: 20px">
+      <div style="margin-top: 20px" v-if="tasks">
         <el-pagination
           background
           layout="total,prev, pager, next"
@@ -441,6 +442,7 @@ export default {
   },
   mounted () {
     this.getFlowLabels()
+    this.getFlows()
   },
   computed: {
     ...mapState({

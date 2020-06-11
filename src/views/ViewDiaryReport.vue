@@ -6,7 +6,7 @@
     <el-form ref="ruleForm" label-width="100px" class="demo-ruleForm">
       <div style="width:20%;float:right;padding-right:100px;">
         <el-row>
-          <el-col :span="4" style="float:right">
+          <el-col :span="4" style="float:right" v-show="isCheckShow">
             <el-button @click="handleClickModifyViewDiaryReport">修改内容</el-button>
           </el-col>
         </el-row><br>
@@ -80,14 +80,31 @@
           </el-col>
           <el-col :span="10">
             <el-form-item label="收支时间: " prop="region">
-              <span>{{report.fianceTime}}</span>
+              <span>{{report.fianceTime | dateYMDHMSFormat}}</span>
             </el-form-item>
           </el-col>
         </el-row>
         <el-row>
-          <el-col :span="12">
+          <el-col :span="10">
             <el-form-item label="摘要: " prop="pass">
               <span>{{report.comment}}</span>
+            </el-form-item>
+          </el-col>
+          <el-col :span="10">
+            <el-form-item label="收支账户: " prop="pass">
+              <span>{{report.fianceAccountName}}</span>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row v-if="report.checkUserId">
+          <el-col :span="10">
+            <el-form-item label="审核人: " prop="pass">
+              <span>{{report.checkUserName}}</span>
+            </el-form-item>
+          </el-col>
+          <el-col :span="10">
+            <el-form-item label="审核时间: " prop="pass">
+              <span>{{report.checkTime}}</span>
             </el-form-item>
           </el-col>
         </el-row>
@@ -144,6 +161,7 @@ export default {
     this.fianceId = this.$route.query.fianceId
     this.getFiance()
     this.getCurrentUser()
+    console.log(this.report)
   },
   computed: {
     ...mapState({

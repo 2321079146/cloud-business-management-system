@@ -1,15 +1,17 @@
 <template>
   <div class="agent-bookkeeping">
-    <p class="new-account-page-title">代理记账<span> 订单编号: {{agentOrder.baseInformation.task.taskNo}}</span></p>
+    <p class="new-account-page-title"><span> 订单编号: {{agentOrder.baseInformation.task.taskNo}}</span></p>
     <div class="dividing-line"></div>
     <div class="agent-bookkeeping-main">
       <!-- <div class="agent-flow"></div> -->
-      <el-collapse style="margin-top:40px;">
+      <el-collapse v-model="activeNames" style="margin-top:40px;">
         <div>
           <el-card class="box-card">
             <div slot="header" class="clearfix">
               <div style="float: right; padding: 3px 0">
                 <el-date-picker
+                  v-model="currentYear"
+                  @change="getTaskFlows"
                   align="right"
                   type="year"
                   placeholder="选择年">
@@ -24,7 +26,7 @@
                       <template slot="progressDot" slot-scope="{ description }">
                         <span class="ant-steps-icon-dot" :class="getStepsIconClass(description)"></span>
                       </template>
-                      <a-step :title="taskFlow.monthLabel" :description="taskFlow.status" v-for="(taskFlow, index) in getTaskFlows(agentOrder.baseInformation.task.serviceStartMonth, agentOrder.taskFlowList)" :key="index"/>
+                      <a-step :title="taskFlow.month" :description="taskFlow.status" v-for="(taskFlow, index) in allTaskFlows" :key="index"/>
                     </a-steps>
                   </a-col>
                 </a-row>
@@ -128,24 +130,24 @@
             <el-row>
               <el-col :span="12">
                 <el-form-item label="服务开始月: " prop="name">
-                  <span>{{agentOrder.baseInformation.task.serviceStartMonth| dateYM}}</span>
+                  <span v-if="agentOrder.baseInformation.task.serviceStartMonth">{{agentOrder.baseInformation.task.serviceStartMonth| dateYM}}</span>
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <!-- <el-col :span="12">
                 <el-form-item label="剩余赠送月: " prop="name">
                   <span>{{ getLeftGifts(agentOrder.baseInformation.task) }}</span>
+                </el-form-item>
+              </el-col> -->
+               <el-col :span="12">
+                <el-form-item label="剩余服务月: " prop="name">
+                  <span>{{agentOrder.baseInformation.task.number - agentOrder.baseInformation.task.completeCount}}</span>
                 </el-form-item>
               </el-col>
             </el-row>
             <el-row>
               <el-col :span="12">
-                <el-form-item label="剩余服务月: " prop="name">
-                  <span>{{agentOrder.accountInformation.surplusNum}}</span>
-                </el-form-item>
-              </el-col>
-              <el-col :span="12">
                 <el-form-item label="当前报税期: " prop="name">
-                  <span>{{agentOrder.baseInformation.task.taxDate| dateYM}}</span>
+                  <span  v-if="agentOrder.baseInformation.task.taxDate">{{agentOrder.baseInformation.task.taxDate| dateYM}}</span>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -165,7 +167,7 @@
               label="报税期"
               :show-overflow-tooltip="true"
               prop="taxDate">
-              <template slot-scope="scope">{{scope.row.date| dateYM}}</template>
+              <template slot-scope="scope">{{scope.row.taxDate| dateYM}}</template>
             </el-table-column>
             <el-table-column
               label="操作人"
@@ -179,10 +181,10 @@
               label="备注"
               prop="remark">
             </el-table-column>
-            <el-table-column
+            <!-- <el-table-column
               label="交接资料"
               prop="relNotice">
-            </el-table-column>
+            </el-table-column> -->
           </el-table>
         </el-collapse-item>
         <img class="base-information-icon" src="../assets/images/newAccountPage/arrow.png" alt="">
@@ -216,7 +218,7 @@
     </div>
     <div class="agent-bookkeeping-slide">
       <el-row>
-        <el-button @click="handleTransferTaskButtonClick">交接任务</el-button>
+        <el-button @click="handleTransferTaskButtonClick" v-if="agentOrder.baseInformation.task.taskStatusValue === '1'">交接任务</el-button>
         <el-dialog title="交接任务: " :visible.sync="HandoverTaskDialogFormVisible" width="40%">
           <el-form>
             <el-form-item label="新负责人" required>
@@ -241,7 +243,7 @@
         </el-dialog>
       </el-row><br>
       <el-row>
-        <el-button @click="handleCancelTaskButtonClick">撤回任务</el-button>
+        <el-button @click="handleCancelTaskButtonClick" v-if="agentOrder.baseInformation.task.taskStatusValue === '3' && agentOrder.baseInformation.task.transferredUserId === user.user.userId">撤回任务</el-button>
         <el-dialog
           title="提示"
           :visible.sync="WithdrawTaskDialogVisible"
@@ -254,7 +256,7 @@
         </el-dialog>
       </el-row><br>
       <el-row>
-        <el-button  @click="handleRecevieTaskButtonClick">接收任务</el-button>
+        <el-button  @click="handleRecevieTaskButtonClick" v-if="agentOrder.baseInformation.task.taskStatusValue === '3' && agentOrder.baseInformation.task.receiveUserId == user.user.userId">接收任务</el-button>
         <el-dialog title="接收任务" :visible.sync="receiveOuterVisible" width="40%">
           <el-dialog
             width="30%"
@@ -262,7 +264,7 @@
             :visible.sync="innerVisible"
             append-to-body>
             <el-form ref="ruleForm" label-width="100px" class="demo-ruleForm">
-              <el-form-item label="退回备注: " prop="desc">
+              <el-form-item label="退回备注: " prop="desc" required>
                 <el-input v-model="backTaskForm.cancelRemark" type="textarea"></el-input>
               </el-form-item>
               <el-form-item>
@@ -287,8 +289,13 @@
         </el-dialog>
       </el-row><br>
       <el-row>
-        <el-button @click="handleCompleteTaskButtonClick" v-show="isStarted">完成记账</el-button>
+        <el-button @click="handleCompleteTaskButtonClick" v-if="agentOrder.baseInformation.task.taskStatusValue === '1'">完成记账</el-button>
         <el-dialog title="完成记账" :visible.sync="carryOutTaskDialogFormVisible" width="40%">
+          <el-form>
+            <el-form-item label="当前报税期: " required>
+              <span>{{agentOrder.baseInformation.task.taxDate | dateYM}}</span>
+            </el-form-item>
+          </el-form>
           <el-form>
             <el-form-item label="备注: " required>
               <el-input v-model="completeTaskForm.remark"></el-input>
@@ -299,10 +306,10 @@
             <el-button @click="carryOutTaskDialogFormVisible = false">取 消</el-button>
           </div>
         </el-dialog>
-        <el-button @click="handleStartTaskButtonClick" v-show="!isStarted">开始记账</el-button>
+        <el-button @click="handleStartTaskButtonClick" v-if="agentOrder.baseInformation.task.taskStatusValue === '0'">开始记账</el-button>
         <el-dialog title="开始记账" :visible.sync="serviceStartTaskialogFormVisible" width="40%">
           <el-form>
-            <el-form-item label="服务开始月: ">
+            <el-form-item label="服务开始月: " required>
               <div class="block">
                 <el-date-picker
                   v-model="submitDate"
@@ -311,7 +318,7 @@
                 </el-date-picker>
               </div>
             </el-form-item>
-            <el-form-item label="备注: ">
+            <el-form-item label="备注: " required>
               <el-input v-model="startTaskForm.remark"></el-input>
             </el-form-item>
           </el-form>
@@ -322,7 +329,7 @@
         </el-dialog>
       </el-row><br>
       <el-row>
-        <el-button @click="handleStopTaskButtonClick">终止任务</el-button>
+        <el-button @click="handleStopTaskButtonClick" v-if="agentOrder.baseInformation.task.taskStatusValue === '1'">终止任务</el-button>
         <el-dialog title="请确认是否终止任务?" :visible.sync="terminationTaskDialogFormVisible" width="40%">
           <el-form>
             <el-form-item label="终止原因: " required="">
@@ -339,10 +346,10 @@
   </div>
 </template>
 <script>
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import { Message } from 'element-ui'
 
-const getMonth = taxDate => new Date(taxDate).getMonth() + 1
+// const getMonth = taxDate => new Date(taxDate).getMonth() + 1
 
 export default {
   metaInfo: {
@@ -350,6 +357,9 @@ export default {
   },
   data () {
     return {
+      allTaskFlows: [],
+      currentYear: '',
+      activeNames: ['1', '2', '3', '4'],
       submitDate: '',
       HandoverTaskDialogFormVisible: false,
       WithdrawTaskDialogVisible: false,
@@ -408,8 +418,12 @@ export default {
   },
   computed: {
     ...mapState({
-      agentOrder: state => state.task.task,
-      allUser: state => state.sysUser.users
+      // agentOrder: state => state.task.task,
+      allUser: state => state.sysUser.users,
+      user: state => state.sysUser.user
+    }),
+    ...mapGetters({
+      agentOrder: 'taskDetail'
     }),
     isStarted () {
       return this.agentOrder.baseInformation.task.taskStatusName === '服务中'
@@ -433,7 +447,10 @@ export default {
       return dt.getFullYear() + '-' + (dt.getMonth() + 1)
     },
     async getAgentOrderDetail () {
-      this.$store.dispatch('getTaskById', this.taskId)
+      this.$store.dispatch('getTaskById', this.taskId).then(() => {
+        console.log(this.user.user.userId)
+        this.getTaskFlows()
+      })
     },
     handleTransferTaskRecevierSelectChange () {},
     handleTransferTaskButtonClick () {
@@ -471,8 +488,15 @@ export default {
       this.receiveTaskForm.taskId = this.taskId
     },
     handleCompleteTaskButtonClick () {
-      this.carryOutTaskDialogFormVisible = true
-      this.completeTaskForm.taskId = this.taskId
+      if (this.countMonthDec(this.agentOrder.baseInformation.task.taxDate, new Date()) <= 0) {
+        Message({
+          message: '不可大于等于当前报税期！',
+          type: 'error'
+        })
+      } else {
+        this.carryOutTaskDialogFormVisible = true
+        this.completeTaskForm.taskId = this.taskId
+      }
       // this.completeTaskForm.remark = this.
     },
     handleStartTaskButtonClick () {
@@ -497,54 +521,106 @@ export default {
         case '交接中': {
           return 'custom-jiaojie-zhong'
         }
+        case '已终止': {
+          return 'custom-stop'
+        }
         default: {
           return 'custom-forbiden'
         }
       }
     },
-    getTaskFlows (startDate, taskFlows) {
-      const startMonth = getMonth(startDate)
-      const availableTaskFlows = taskFlows.map(({ taxDate }) => ({
-        month: getMonth(taxDate),
-        monthLabel: `${getMonth(taxDate)} 月`,
-        status: '已完成'
-      })).sort((x, y) => x.month - y.month)
-      let firstAvailableMonth = null
-      let availableTaskCount = 0
-      const temp = this.year.map(month => {
-        const awailableTaskFlow = availableTaskFlows.filter(availableTaskFlow => availableTaskFlow.month === month)[0]
-        if (awailableTaskFlow !== undefined) {
-          availableTaskCount++
-          if (firstAvailableMonth === null) {
-            firstAvailableMonth = month
-          }
-          return awailableTaskFlow
-        }
-        return {
-          month,
-          monthLabel: `${month} 月`,
+    getTaskFlows () {
+      // const startMonth = getMonth(startDate)
+      // const availableTaskFlows = taskFlows.map(({ taxDate }) => ({
+      //   month: getMonth(taxDate),
+      //   monthLabel: `${getMonth(taxDate)} 月`,
+      //   status: '已完成'
+      // })).sort((x, y) => x.month - y.month)
+      // let firstAvailableMonth = null
+      // let availableTaskCount = 0
+      // const temp = this.year.map(month => {
+      //   const awailableTaskFlow = availableTaskFlows.filter(availableTaskFlow => availableTaskFlow.month === month)[0]
+      //   if (awailableTaskFlow !== undefined) {
+      //     availableTaskCount++
+      //     if (firstAvailableMonth === null) {
+      //       firstAvailableMonth = month
+      //     }
+      //     return awailableTaskFlow
+      //   }
+      //   return {
+      //     month,
+      //     monthLabel: `${month} 月`,
+      //     status: '未开始'
+      //   }
+      // })
+      // if (availableTaskCount === 0 && firstAvailableMonth === null) {
+      //   temp[startMonth - 1].status = '服务中'
+      //   temp.forEach(a => {
+      //     if (a.month < startMonth) {
+      //       temp[a.month - 1].status = '禁止'
+      //     }
+      //   })
+      // }
+      // if (availableTaskCount !== 0) {
+      //   temp.forEach(a => {
+      //     if (a.month > startMonth && a.month < firstAvailableMonth) {
+      //       temp[a.month - 1].status = '服务中'
+      //     }
+      //     if (a.month < startMonth) {
+      //       temp[a.month - 1].status = '禁止'
+      //     }
+      //   })
+      // }
+      const year = this.$moment(this.currentYear).format('YYYY')
+      const taskStatusValue = this.agentOrder.baseInformation.task.taskStatusValue
+      const serviceStartMonth = this.agentOrder.baseInformation.task.serviceStartMonth
+      const serviceEndMonth = this.$moment(serviceStartMonth).add(this.agentOrder.baseInformation.task.number, 'month')
+      const taxDate = this.agentOrder.baseInformation.task.taxDate
+      const taxMonths = []
+      // 获取当前年份月份
+      for (let i = 1; i <= 12; i++) {
+        const tax = {
+          taxtDate: '',
+          month: i + '月',
           status: '未开始'
         }
-      })
-      if (availableTaskCount === 0 && firstAvailableMonth === null) {
-        temp[startMonth - 1].status = '服务中'
-        temp.forEach(a => {
-          if (a.month < startMonth) {
-            temp[a.month - 1].status = '禁止'
+        if (i < 10) {
+          tax.taxtDate = year + '-0' + i
+        } else {
+          tax.taxtDate = year + '-' + i
+        }
+        taxMonths.push(tax)
+      }
+      if (taskStatusValue === '0') { // 未开始
+        this.allTaskFlows = taxMonths
+      } else {
+        taxMonths.forEach((item) => {
+          const currentDate = item.taxtDate
+          if (this.countMonthDec(serviceStartMonth, currentDate) < 0 || this.countMonthDec(serviceEndMonth, currentDate) > 0) {
+            item.status = '禁止'
+          }
+          if (this.countMonthDec(serviceStartMonth, currentDate) >= 0 && this.countMonthDec(taxDate, currentDate) < 0) {
+            item.status = '已完成'
+          }
+          if (taskStatusValue === '1') {
+            if (this.countMonthDec(taxDate, currentDate) >= 0 && this.countMonthDec(serviceEndMonth, currentDate) <= 0) {
+              item.status = '服务中'
+            }
+          } else {
+            if (this.countMonthDec(taxDate, currentDate) === 0) {
+              item.status = this.agentOrder.baseInformation.task.taskStatusName
+            }
           }
         })
+        this.allTaskFlows = taxMonths
       }
-      if (availableTaskCount !== 0) {
-        temp.forEach(a => {
-          if (a.month > startMonth && a.month < firstAvailableMonth) {
-            temp[a.month - 1].status = '服务中'
-          }
-          if (a.month < startMonth) {
-            temp[a.month - 1].status = '禁止'
-          }
-        })
-      }
-      return temp
+    },
+    // 两个时间相差月份
+    countMonthDec (minDate, maxDate) {
+      minDate = this.$moment(minDate)
+      maxDate = this.$moment(maxDate)
+      const monthDec = (maxDate.year() - minDate.year()) * 12 + (maxDate.month() - minDate.month())
+      return monthDec
     },
     // 获取所有用户列表
     getAllUser () {
@@ -632,9 +708,7 @@ export default {
     },
     // 完成记账
     completeTask () {
-      const { taxDate } = this.agentOrder.baseInformation.task
-      const date = new Date(taxDate)
-      this.completeTaskForm.taxDate = `${date.getFullYear()}-${date.getMonth() + 1}`
+      this.completeTaskForm.taxDate = this.$moment(this.agentOrder.baseInformation.task).format('YYYY-MM')
       this.$store.dispatch('completeTask', this.completeTaskForm).then(() => {
         Message({
           message: '完成记账提交成功',
@@ -679,6 +753,7 @@ export default {
     }
   },
   mounted () {
+    this.currentYear = this.$moment(new Date()).format('YYYY')
     this.taskId = this.$route.query.taskId
     this.getAgentOrderDetail()
     this.getAllUser()
@@ -740,7 +815,7 @@ export default {
     border: 1px solid #e9e9e9;
   }
   .custom-finish {
-    background-color: #0099cc !important;
+    background-color: #409EFF !important;
   }
   .custom-process {
     background-color: #00cc01 !important;
@@ -753,6 +828,9 @@ export default {
   }
   .custom-forbiden {
     background-color: #909399 !important;
+  }
+  .custom-stop {
+    background-color: #f70707 !important;
   }
 }
 

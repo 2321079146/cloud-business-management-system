@@ -42,8 +42,9 @@
             <el-form-item label="产品单位: ">
               <el-select placeholder="次" style="width: 193px;" v-model="createProductForm.productUnitType">
                 <el-option label="次" value="0"></el-option>
-                <el-option label="月" value="1"></el-option>
-                <el-option label="人 / 天" value="2"></el-option>
+                <el-option label="年" value="1"></el-option>
+                <el-option label="月" value="2"></el-option>
+                <el-option label="人 / 天" value="3"></el-option>
               </el-select>
             </el-form-item>
           </el-col>

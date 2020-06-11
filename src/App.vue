@@ -51,7 +51,7 @@
                     </div>
 
                     <!-- Unnamed (矩形) -->
-                    <div id="u323" class="ax_default box_3">
+                    <div id="u323" class="ax_default box_3" style="width:100px;height:100px;background-color:#000000;border-radius:50%;">
                       <img id="u323_img" class="img " src="./assets/images/home/u323.png"/>
                     </div>
 
@@ -146,6 +146,9 @@ export default {
   },
   data () {
     return {
+      circleUrl: './assets/images/home/WechatIMG25.jpeg',
+      squareUrl: 'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
+      sizeList: ['large', 'medium', 'small'],
       companyInformation: {
         companyLogo: '../assets/images/home/WechatIMG25.jpeg',
         companyDepartmentName: '',

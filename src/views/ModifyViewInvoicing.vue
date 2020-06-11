@@ -6,7 +6,7 @@
     <el-form label-width="150px" class="demo-ruleForm">
       <el-row>
         <el-col :span="10">
-          <el-form-item label="发票类型：">
+          <el-form-item label="发票类型：" required>
             <el-select v-model="updateInvoiceForm.invoiceTypeName" @change="handleTypeSelectChange" style="width:100%">
               <el-option value="0">增值税专用发票</el-option>
               <el-option value="1">增值税普通发票</el-option>
@@ -29,19 +29,19 @@
       </el-row>
       <el-row>
         <el-col :span="10">
-          <el-form-item label="发票抬头：">
+          <el-form-item label="发票抬头：" required>
             <el-input v-model="updateInvoiceForm.invoiceHead"></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="10">
-          <el-form-item label="开票金额：">
+          <el-form-item label="开票金额：" required>
             <el-input v-model="updateInvoiceForm.invoiceMoney"></el-input>
           </el-form-item>
         </el-col>
       </el-row>
       <el-row>
         <el-col :span="10">
-          <el-form-item label="社会信用代码：">
+          <el-form-item label="社会信用代码：" required>
             <el-input v-model="updateInvoiceForm.creditCode"></el-input>
           </el-form-item>
         </el-col>
@@ -83,7 +83,7 @@
       </el-row>
     </el-form>
     <el-button type="primary" @click="handleUpdateInvoiceButtonClick">提交</el-button>
-    <el-button>取消</el-button><br><br><br>
+    <el-button @click="hanleCancel">取消</el-button><br><br><br>
   </div>
 </template>
 <script>
@@ -98,6 +98,7 @@ export default {
       updateInvoiceForm: {
         invoiceId: 1,
         invoiceTypeName: '',
+        entityId: '',
         entityName: '',
         invoiceHead: '',
         invoiceMoney: '',
@@ -116,10 +117,14 @@ export default {
     }
   },
   methods: {
+    hanleCancel () {
+      this.$router.push({ path: '/billing-list' })
+    },
     getInvoice () {
       this.$store.dispatch('getBillingById', this.invoiceId).then(() => {
         this.updateInvoiceForm.invoiceId = this.invoiceId
         this.updateInvoiceForm.invoiceTypeName = this.invoice.invoiceTypeName
+        this.updateInvoiceForm.entityId = this.invoice.entityId
         this.updateInvoiceForm.entityName = this.invoice.entityName
         this.updateInvoiceForm.invoiceHead = this.invoice.invoiceHead
         this.updateInvoiceForm.creditCode = this.invoice.creditCode
@@ -154,7 +159,9 @@ export default {
       return this.companies.filter(({ tenantCompanyId }) => tenantCompanyId === id)[0].fullName
     },
     handleComSelectChange (id) {
-      this.createInvoiceFrom.entityName = this.getCompanicesName(id)
+      console.log(id)
+      this.updateInvoiceForm.entityName = this.getCompanicesName(id)
+      console.log(this.updateInvoiceForm.entityId)
     },
     modifyInvoice () {
       this.$store.dispatch('updateInvoice', this.updateInvoiceForm).then(() => {

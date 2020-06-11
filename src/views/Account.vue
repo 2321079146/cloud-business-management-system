@@ -148,7 +148,7 @@
             </el-table-column>
             <el-table-column
               prop="customerRelUserName"
-              label="销售代表">
+              label="客户代表">
             </el-table-column>
             <el-table-column
               prop="OrderTotal"

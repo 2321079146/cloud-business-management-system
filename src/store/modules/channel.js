@@ -1,8 +1,9 @@
-import { getChannelList, createChannel, updateChannel, getChannelInformation, deleteChannel } from '../../api/channel'
+import { getChannelList, createChannel, updateChannel, getChannelInformation, deleteChannel, getAllChannels } from '../../api/channel'
 
 const state = {
   channels: {},
-  channel: {}
+  channel: {},
+  allChannels: {}
 }
 
 const mutations = {
@@ -11,6 +12,9 @@ const mutations = {
   },
   'SET_CHANNEL' (state, channel) {
     state.channel = channel
+  },
+  'SET_AllCHANNELS' (state, allChannels) {
+    state.allChannels = allChannels
   }
 }
 
@@ -39,6 +43,11 @@ const actions = {
     if (code !== 0) {
       return Promise.reject(msg)
     }
+  },
+  async getAllChannels ({ commit }) {
+    const { data: list } = await getAllChannels()
+    console.log(list)
+    commit('SET_AllCHANNELS', list)
   }
 }
 

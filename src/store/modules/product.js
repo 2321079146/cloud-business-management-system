@@ -1,4 +1,4 @@
-import { getProducts, createProduct, updateProduct, deleteProduct, getProductDetail } from '../../api/product'
+import { getProducts, createProduct, updateProduct, deleteProduct, getProductDetail, getAllProducts } from '../../api/product'
 
 const state = {
   products: {
@@ -6,7 +6,8 @@ const state = {
       list: []
     }
   },
-  product: {}
+  product: {},
+  allProducts: []
 }
 
 const mutations = {
@@ -15,6 +16,9 @@ const mutations = {
   },
   'SET_PRODUCT' (state, product) {
     state.product = product
+  },
+  'SET_AllPRODUCT' (state, allProducts) {
+    state.allProducts = allProducts
   }
 }
 
@@ -35,13 +39,20 @@ const actions = {
     commit('SET_PRODUCT', product)
   },
   async updateProduct ({ commit }, updateProductForm) {
-    await updateProduct(updateProductForm)
+    const { data: { code, msg } } = await updateProduct(updateProductForm)
+    if (code !== 0) {
+      return Promise.reject(msg)
+    }
   },
   async deleteProduct ({ commit }, productIds) {
     const { data: { code, msg } } = await deleteProduct(productIds)
     if (code !== 0) {
       return Promise.reject(msg)
     }
+  },
+  async getAllProducts ({ commit }) {
+    const { data: list } = await getAllProducts()
+    commit('SET_AllPRODUCT', list)
   }
 }
 

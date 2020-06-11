@@ -27,10 +27,15 @@ const getProducts = getProductsForm => request({
   params: getProductsForm
 })
 
+const getAllProducts = () => request({
+  url: '/product/all'
+})
+
 export {
   getProducts,
   createProduct,
   deleteProduct,
   updateProduct,
-  getProductDetail
+  getProductDetail,
+  getAllProducts
 }

@@ -15,7 +15,7 @@
               :on-success="handleAvatarSuccess"
               :before-upload="beforeAvatarUpload">
             </el-upload>
-            <img v-for="(url, index) in getImageUrls('头像')" :key="index" :src="url">
+            <!-- <img v-for="(url, index) in getImageUrls('头像')" :key="index" :src="url"> -->
           </el-col>
         </el-row>
         <br>
@@ -94,7 +94,7 @@
         <el-row>
           <el-col :span="12">
             <el-form label-width="100px" class="demo-ruleForm">
-              <el-form-item label="备注信息" prop="desc" required="">
+              <el-form-item label="备注信息" prop="desc" required>
                 <el-input type="textarea" v-model="updateTenantForm.remark"></el-input>
               </el-form-item>
             </el-form>
@@ -187,12 +187,22 @@
         <div class="dividing-line"></div>
         <el-row>
           <el-button type="primary" @click="addAccountsReceivableDialogVisible = true" class="upload-logo-custom">+新增收款账户</el-button>
-          <el-dialog title="编辑收款账户" width="45%" :visible.sync="addAccountsReceivableDialogVisible">
+          <el-dialog title="新建收款账户" width="45%" :visible.sync="addAccountsReceivableDialogVisible">
             <el-form label-width="120px">
               <el-form-item label="服务公司：" required>
-                <el-input v-model="createTenantAccountFrom.tenantCompanyName"></el-input>
+                <el-select
+                  v-model="createTenantAccountFrom.tenantCompanyId"
+                  @change="changeTenantAccountFrom"
+                  placeholder="请选择">
+                  <el-option
+                    v-for="item in companyList.page.list"
+                    :key="item.tenantCompanyId"
+                    :label="item.fullName"
+                    :value="item.tenantCompanyId">
+                  </el-option>
+                </el-select>
               </el-form-item>
-              <el-form-item label="账号类型: ">
+              <el-form-item label="账号类型: " required>
                 <el-radio-group v-model="createTenantAccountFrom.accountType" @change="handleAccountTypeRadioGroupChange">
                   <el-radio :label="0">银行账号</el-radio>
                   <el-radio :label="1">支付宝账号</el-radio>
@@ -226,7 +236,7 @@
               </el-form-item>
             </el-form>
             <div slot="footer" class="dialog-footer">
-              <el-button>取消</el-button>
+              <el-button @click="addAccountsReceivableDialogVisible = false">取消</el-button>
               <el-button type="primary" :loading="isTenantAccount" @click="handleCreateTenantAccount">保存</el-button>
             </div>
           </el-dialog>
@@ -234,7 +244,7 @@
         <el-row>
           <el-table
           style="width: 100%"
-          :data="collectAccounts">
+          :data="tenantCollectAccountList">
             <el-table-column
               width="180"
               label="服务公司"
@@ -243,7 +253,7 @@
             <el-table-column
               width="180"
               label="类型"
-              prop="accountType">
+              prop="accountTypeName">
             </el-table-column>
             <el-table-column
               width="180"
@@ -259,10 +269,20 @@
                   @click="handleEditCollectAccountButtonClick(scope.row)">详情</el-button>
                   <el-dialog title="编辑收款账户" width="45%" :visible.sync="viewAccountsReceivableDialogVisible">
                     <el-form label-width="120px" class="demo-ruleForm">
-                      <el-form-item label="服务公司：">
-                        <el-input v-model="updateTenantAccountForm.tenantCompanyName"></el-input>
+                      <el-form-item label="服务公司：" required>
+                        <el-select
+                          v-model="updateTenantAccountForm.tenantCompanyId"
+                          @change="changeUpdateTenantAccountFrom"
+                          placeholder="请选择">
+                          <el-option
+                            v-for="item in companyList.page.list"
+                            :key="item.tenantCompanyId"
+                            :label="item.fullName"
+                            :value="item.tenantCompanyId">
+                          </el-option>
+                        </el-select>
                       </el-form-item>
-                      <el-form-item label="账号类型: " required="">
+                      <el-form-item label="账号类型: " required>
                         <el-radio-group v-model="updateTenantAccountForm.accountType" @change="handleAccountTypeRadioGroupChange">
                           <el-radio :label="0">银行账号</el-radio>
                           <el-radio :label="1">支付宝账号</el-radio>
@@ -270,33 +290,33 @@
                           <el-radio :label="3">现金账号</el-radio>
                         </el-radio-group>
                       </el-form-item>
-                      <el-form-item v-show="updateTenantAccountForm.accountType === 0" label="账户名称：">
+                      <el-form-item v-show="updateTenantAccountForm.accountType === 0" label="账户名称：" required>
                         <el-input v-model="updateTenantAccountForm.accountName"></el-input>
                       </el-form-item>
-                      <el-form-item v-show="updateTenantAccountForm.accountType === 0" label="银行卡号：">
+                      <el-form-item v-show="updateTenantAccountForm.accountType === 0" label="银行卡号：" required>
                         <el-input v-model="updateTenantAccountForm.account"></el-input>
                       </el-form-item>
-                      <el-form-item v-show="updateTenantAccountForm.accountType === 0" label="开户银行：">
+                      <el-form-item v-show="updateTenantAccountForm.accountType === 0" label="开户银行：" required>
                         <el-input v-model="updateTenantAccountForm.bank"></el-input>
                       </el-form-item>
-                      <el-form-item v-show="updateTenantAccountForm.accountType === 1" label="收款方名称：">
+                      <el-form-item v-show="updateTenantAccountForm.accountType === 1" label="收款方名称：" required>
                         <el-input v-model="updateTenantAccountForm.accountName"></el-input>
                       </el-form-item>
-                      <el-form-item v-show="updateTenantAccountForm.accountType === 1" label="支付宝账号：">
+                      <el-form-item v-show="updateTenantAccountForm.accountType === 1" label="支付宝账号：" required>
                         <el-input v-model="updateTenantAccountForm.account"></el-input>
                       </el-form-item>
-                      <el-form-item v-show="updateTenantAccountForm.accountType === 2" label="收款人名称：">
+                      <el-form-item v-show="updateTenantAccountForm.accountType === 2" label="收款人名称：" required>
                         <el-input v-model="updateTenantAccountForm.accountName"></el-input>
                       </el-form-item>
-                      <el-form-item v-show="updateTenantAccountForm.accountType === 2" label="微信账号：">
+                      <el-form-item v-show="updateTenantAccountForm.accountType === 2" label="微信账号：" required>
                         <el-input v-model="updateTenantAccountForm.account"></el-input>
                       </el-form-item>
-                      <el-form-item v-show="updateTenantAccountForm.accountType === 3" label="账户名称：">
+                      <el-form-item v-show="updateTenantAccountForm.accountType === 3" label="账户名称：" required>
                         <el-input disabled placeholder="现金收款"></el-input>
                       </el-form-item>
                     </el-form>
                     <div slot="footer" class="dialog-footer">
-                      <el-button>取消</el-button>
+                      <el-button @click="viewAccountsReceivableDialogVisible = false">取消</el-button>
                       <el-button type="primary" @click="handleUpdateTenantAccount">保存</el-button>
                     </div>
                   </el-dialog>
@@ -367,8 +387,8 @@
         </el-row>
         <el-row>
           <div style="margin: 150px 0;"></div>
+            <el-checkbox v-model="checked1" disabled>提交申请 (由申请人的部门主管对其进行审核)</el-checkbox><br>
           <el-checkbox-group v-model="checkedFlowConfigNames" @change="handleFlowConfigCheckbokGroupChange">
-            <el-checkbox>提交申请 (由申请人的部门主管对其进行审核)</el-checkbox><br>
             <el-row
               v-for="flowConfig in flowConfigs"
               :key="flowConfig.id"
@@ -397,6 +417,8 @@ export default {
   },
   data () {
     return {
+      tenantCollectAccountList: [],
+      checked1: true,
       tenantId: 1,
       radio: 3,
       tabPosition: 'left',
@@ -467,7 +489,8 @@ export default {
         updateTime: null
       },
       createTenantAccountFrom: {
-        tenantCompanyId: 2,
+        tenantCompanyId: '',
+        tenantCompanyName: '',
         accountName: '',
         accountType: 0,
         account: '',
@@ -479,7 +502,8 @@ export default {
       isTenantAccount: false,
       // 更新收款账户信息
       updateTenantAccountForm: {
-        tenantCompanyId: 2,
+        tenantCompanyId: '',
+        tenantCompanyName: '',
         accountName: '',
         accountType: '',
         account: '',
@@ -497,6 +521,12 @@ export default {
     }
   },
   methods: {
+    changeTenantAccountFrom (id) {
+      this.createTenantAccountFrom.tenantCompanyName = this.companyList.page.list.filter(({ tenantCompanyId }) => tenantCompanyId === id)[0].fullName
+    },
+    changeUpdateTenantAccountFrom (id) {
+      this.updateTenantAccountForm.tenantCompanyName = this.companyList.page.list.filter(({ tenantCompanyId }) => tenantCompanyId === id)[0].fullName
+    },
     // 头像上传
     getImageUrls (type) {
       return this
@@ -800,7 +830,29 @@ export default {
     },
     // 获取所有收款账户 list
     getCollectAccounts () {
-      this.$store.dispatch('getTenantAccountList', this.getTenantAccountListForm)
+      this.$store.dispatch('getTenantAccountList', this.getTenantAccountListForm).then(() => {
+        this.tenantCollectAccountList = this.collectAccounts
+        this.tenantCollectAccountList.forEach((item) => {
+          switch (item.accountType) {
+            case '0': {
+              item.accountTypeName = '微信账户'
+              break
+            }
+            case '1': {
+              item.accountTypeName = '支付宝账户'
+              break
+            }
+            case '2': {
+              item.accountTypeName = '银行账户'
+              break
+            }
+            case '3': {
+              item.accountTypeName = '现金账户'
+              break
+            }
+          }
+        })
+      })
     },
     // 根据ID获取一个服务公司
     async getCompanyById () {
@@ -847,6 +899,7 @@ export default {
     this.getCollectAccounts()
     // 获取审核配置
     this.getFlowConfigs()
+    console.log(this.companyList)
   },
   computed: {
     ...mapState({

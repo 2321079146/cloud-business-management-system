@@ -34,7 +34,7 @@
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="企业电话：">
-                <el-input v-model="createCustomerForm.companyPhone"></el-input>
+                <el-input v-model="createCustomerForm.customerBusinessPhone"></el-input>
               </el-form-item>
             </el-col>
             <el-col :span="12">
@@ -105,7 +105,7 @@
           </el-row>
           <el-row :gutter="20">
             <el-col :span="12" v-show="isRoyaltyCoefficientShow">
-              <el-form-item label="提成系数：">
+              <el-form-item label="提成系数：" required>
                 <el-input v-model="createCustomerForm.royaltyCoefficient"></el-input>
               </el-form-item>
             </el-col>
@@ -123,10 +123,10 @@
           <div class="tasks-table">
             <el-table
               :data="createCustomerForm.taskList">
-              <el-table-column label="序号"></el-table-column>
+              <el-table-column label="序号" type="index"></el-table-column>
               <el-table-column label="产品名称" prop="productName"></el-table-column>
               <el-table-column label="服务单价" prop="price"></el-table-column>
-              <el-table-column label="服务周期（月）" v-if="isRoyaltyCoefficientShow" prop="number"></el-table-column>
+              <el-table-column label="服务周期" v-if="isRoyaltyCoefficientShow" prop="number"></el-table-column>
               <el-table-column label="总额">
                 <template slot-scope="scope">
                   {{ scope.row.price * scope.row.number }}
@@ -136,7 +136,7 @@
                 <template slot-scope="scope">
                   <el-button size="mini" type="text" @click="handleEditTaskButtonClick(scope.$index)">编辑</el-button>
                   <el-dialog
-                    :visible="editTaskDialogVisible"
+                    :visible.sync="editTaskDialogVisible"
                     width="50%">
                     <el-form>
                       <el-row :gutter="20">
@@ -239,7 +239,7 @@
             </el-table>
             <el-button type="primary" style="width: 100%;" @click="handleAddTaskButtonClick">添加产品</el-button>
             <el-dialog
-              :visible="addTaskDialogVisible"
+              :visible.sync="addTaskDialogVisible"
               width="50%">
               <el-form>
                 <el-row :gutter="20">
@@ -350,39 +350,45 @@
         <el-form label-width="100px">
           <el-row>
             <el-col :span="10">
-              <el-form-item label="身份证复印件: ">
+              <el-form-item label="身份证复件: " required>
                 <el-upload
                   action
                   :http-request="handleIdCardCopyUploadHttpRequest"
+                  :on-preview="handlePreviewPicture"
+                  :on-remove="handleRemovePicture"
                   :file-list="idCardCopyFiles"
                   list-type="picture">
                   <el-button size="small" type="primary">选择上传文件</el-button>
-                  <div slot="tip">只能上传jpg/png文件，且不超过500kb</div>
+                  <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div>
                   </el-upload>
               </el-form-item>
             </el-col>
             <el-col :span="10">
-              <el-form-item label="营业执照复印件: ">
+              <el-form-item label="营业执照复件: " required>
                 <el-upload
                   action
                   :http-request="handleBusinessLicenseCopyImageUploadHttpRequest"
+                  :on-preview="handlePreviewPicture"
+                  :on-remove="handleRemovePicture"
                   list-type="picture">
                   <el-button size="small" type="primary">选择上传文件</el-button>
-                  <div slot="tip">只能上传jpg/png文件，且不超过500kb</div>
+                  <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div>
                 </el-upload>
               </el-form-item>
             </el-col>
           </el-row>
           <el-row>
             <el-col :span="10">
-              <el-form-item label="合同原件：">
+              <el-form-item label="合同原件：" required>
                 <el-upload
                   action
                   :http-request="handleContractloadHttpRequest"
+                  :on-preview="handlePreviewPicture"
+                  :on-remove="handleRemovePicture"
                   :file-list="contract"
                   list-type="picture">
                   <el-button size="small" type="primary">选择上传文件</el-button>
-                  <div slot="tip">只能上传jpg/png文件，且不超过500kb</div>
+                  <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div>
                 </el-upload>
               </el-form-item>
             </el-col>
@@ -392,8 +398,12 @@
         </el-form>
       </el-collapse-item>
     </el-collapse><br><br>
+    <el-dialog :visible.sync="dialogVisible">
+      <img width="100%" :src="dialogImageUrl" alt="">
+    </el-dialog>
     <div>
       <el-button type="primary" :loading="isAccount" @click="handleCreateCustomerButtonClick">保 存</el-button>
+      <el-button :loading="isAccount" @click="handleCancelCustomerButtonClick">取 消</el-button>
     </div>
   </div>
 </template>
@@ -407,6 +417,8 @@ export default {
   },
   data () {
     return {
+      dialogImageUrl: '',
+      dialogVisible: false,
       activeNames: [
         'base-info',
         'task-table',
@@ -534,9 +546,29 @@ export default {
     }
   },
   methods: {
+    // 预览图片
+    handlePreviewPicture (file) {
+      this.dialogImageUrl = file.url
+      this.dialogVisible = true
+    },
+    // 删除图片
+    handleRemovePicture (file) {
+      const fileId = file.id
+      this.$store.dispatch('removeFile', fileId).then(() => {
+        Message({
+          message: '删除成功',
+          type: 'success'
+        })
+      }).catch(message => {
+        Message({
+          message,
+          type: 'error'
+        })
+      })
+    },
     // 获取产品列表
     getProducts () {
-      this.$store.dispatch('getProducts', this.getProductsForm)
+      this.$store.dispatch('getAllProducts')
     },
     // 根据 ID 获取产品
     getProductById (id) {
@@ -603,7 +635,7 @@ export default {
     handleCreateCustomerFormCustomerSourceSelectChange (customerSource) {
       switch (customerSource) {
         case '老客户': {
-          this.customerSourceDetails = this.customers.map(({ customerName }) => customerName)
+          this.customerSourceDetails = this.allCustomers.map(({ customerName }) => customerName)
           break
         }
         case '渠道': {
@@ -646,7 +678,10 @@ export default {
       this.$store.dispatch('getCustomers', this.getCustomersForm)
     },
     getChannels () {
-      this.$store.dispatch('getChannelList', this.getChannelsForm)
+      this.$store.dispatch('getAllChannels')
+    },
+    getAllCustomers () {
+      this.$store.dispatch('getAllCustomers', this.getChannelsForm)
     },
     isTasksContainAgentReport () {
       return this.createCustomerForm.taskList.filter(({ productName }) => productName === '代理记账').length > 0
@@ -664,11 +699,11 @@ export default {
       this.isAccount = true
       this.$store.dispatch('createCustomer', this.createCustomerForm).then(() => {
         Message({
-          message: '创建用户成功',
+          message: '创建客户成功',
           type: 'success'
         })
         this.isAccount = false
-        this.$router.push({ path: '/view-account' })
+        this.$router.push({ path: '/account' })
       }).catch(message => {
         Message({
           message,
@@ -679,6 +714,9 @@ export default {
     },
     handleCreateCustomerButtonClick () {
       this.createCustomer()
+    },
+    handleCancelCustomerButtonClick () {
+      this.$router.push({ path: '/account' })
     },
     handleIdCardCopyUploadHttpRequest ({ file }) {
       const formData = new FormData()
@@ -749,15 +787,15 @@ export default {
   mounted () {
     this.getProducts()
     this.getUsers()
-    this.getCustomers()
     this.getChannels()
+    this.getAllCustomers()
   },
   computed: {
     ...mapState({
-      products: state => state.product.products.page.list,
+      products: state => state.product.allProducts.list,
       users: state => state.sysUser.users.list,
-      customers: state => state.customer.customers.list,
-      channels: state => state.channel.channels.page.list
+      channels: state => state.channel.allChannels.list,
+      allCustomers: state => state.customer.allCustomers.customerList
     }),
     isRoyaltyCoefficientShow () {
       return this.isTasksContainAgentReport()

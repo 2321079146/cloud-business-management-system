@@ -1,23 +1,23 @@
 <template>
   <div class="one-time-accounting">
-    <p class="one-time-accounting-title"><span>订单编号: cs-2020010101</span></p>
+    <p class="one-time-accounting-title"><span>订单编号: {{agentOrder.baseInformation.task.taskNo}}</span></p>
     <div class="dividing-line"></div>
     <div class="one-time-accounting-main">
       <!-- <div class="agent-flow"></div> -->
       <div>
         <el-card class="box-card">
           <el-row>
-            <el-col :span="3">
-              {{agentOrder.baseInformation.task.productName}}
-            </el-col>
-            <el-col :span="21">
+            <!-- <el-col :span="3">
+              {{agenOrder.baseInformation.task.productName}}
+            </el-col> -->
+            <el-col :span="24" :offset="10">
               <a-steps :current="0" class="agent-order-steps">
                 <template slot="progressDot" slot-scope="{ description }">
                   <span class="ant-steps-icon-dot" :class="getStepsIconClass(description, false, agentOrder.baseInformation.task.taskStatusName)"></span>
                 </template>
-                <a-step :title="agentOrder.baseInformation.task.createUserName" :description="getNotAgentDate(agentOrder.baseInformation.task.createTime)" />
-                <a-step title="服务中" description="" />
-                <a-step :title="getFinish(agentOrder.baseInformation.task)" :description="getFinishDescription(agentOrder.baseInformation.task)"/>
+                <a-step :title="agentOrder.baseInformation.task.createUserName" :description="agentOrder.baseInformation.task.createTime" />
+                <!-- <a-step title="服务中" description="" /> -->
+                <!-- <a-step :title="getFinish(agentOrder.baseInformation.task)" :description="getFinishDescription(agentOrder.baseInformation.task)"/> -->
               </a-steps>
             </el-col>
           </el-row>
@@ -29,7 +29,7 @@
           </el-row>
         </el-card>
       </div>
-      <el-collapse style="margin-top:40px;">
+      <el-collapse  v-model="activeNames" style="margin-top:40px;">
       <div class="">
         <img class="base-information-icon" src="../assets/images/newAccountPage/arrow.png" alt="">
         <el-collapse-item title="基础信息" name="1">
@@ -78,7 +78,7 @@
               </el-col>
               <el-col :span="12">
                 <el-form-item label="备注: ">
-                  <span></span>
+                  <span>{{agentOrder.baseInformation.customer.remark}}</span>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -149,9 +149,9 @@
     </el-collapse>
     </div>
     <div class="one-time-accounting-slide">
-      <el-row>
+      <el-row v-if="agentOrder.baseInformation.task.taskStatusValue === '1'">
         <el-button @click="handleCompleteTaskButtonClick">开始填报</el-button>
-        <el-dialog title="企业变更" :visible.sync="carryOutTaskDialogFormVisible" width="40%">
+        <el-dialog :title="agentOrder.baseInformation.task.productName" :visible.sync="carryOutTaskDialogFormVisible" width="40%">
           <el-form>
             <el-form-item label="备注: " required="">
               <el-input v-model="completeTaskForm.remark" type="textarea"></el-input>
@@ -163,7 +163,7 @@
           </div>
         </el-dialog>
       </el-row><br>
-      <el-row>
+      <el-row v-if="agentOrder.baseInformation.task.taskStatusValue === '1'">
         <el-button @click="handleTransferTaskButtonClick">交接任务</el-button>
         <el-dialog title="交接任务: " :visible.sync="HandoverTaskDialogFormVisible" width="40%">
           <el-form>
@@ -187,7 +187,7 @@
           </div>
         </el-dialog>
       </el-row><br>
-      <el-row>
+      <el-row v-if="agentOrder.baseInformation.task.taskStatusValue === '3' && agentOrder.baseInformation.task.transferredUserId === user.user.userId">
         <el-button @click="handleCancelTaskButtonClick">撤回任务</el-button>
         <el-dialog
           title="提示"
@@ -200,7 +200,7 @@
           </span>
         </el-dialog>
       </el-row><br>
-      <el-row>
+      <el-row v-if="agentOrder.baseInformation.task.taskStatusValue === '3' && agentOrder.baseInformation.task.receiveUserId === user.user.userId">
         <el-button  @click="handleRecevieTaskButtonClick">接收任务</el-button>
         <el-dialog title="接收任务" :visible.sync="receiveOuterVisible" width="40%">
           <el-dialog
@@ -233,7 +233,7 @@
           </div>
         </el-dialog>
       </el-row><br>
-      <el-row>
+      <el-row v-if="agentOrder.baseInformation.task.taskStatusValue === '1'">
         <el-button @click="handleStopTaskButtonClick">终止任务</el-button>
         <el-dialog title="请确认是否终止任务?" :visible.sync="terminationTaskDialogFormVisible" width="40%">
           <el-form>
@@ -261,6 +261,7 @@ export default {
   },
   data () {
     return {
+      activeNames: ['1', '2', '3', '4'],
       HandoverTaskDialogFormVisible: false,
       WithdrawTaskDialogVisible: false,
       receiveOuterVisible: false,
@@ -304,13 +305,13 @@ export default {
   computed: {
     ...mapState({
       agentOrder: state => state.task.task,
-      allUser: state => state.sysUser.users
+      allUser: state => state.sysUser.users,
+      user: state => state.sysUser.user
     })
   },
   methods: {
     getNotAgentDate (createTime) {
-      const date = new Date(createTime)
-      return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
+      return this.$moment(createTime).format('YYYY-MM-DD')
     },
     getFinish ({ taskStatusName }) {
       if (taskStatusName === '交接中') {
@@ -334,31 +335,19 @@ export default {
       return '未开始'
     },
     getStepsIconClass (description, isAgent, status) {
-      switch (description) {
-        case '未开始': {
-          return 'custom-wait'
-        }
-        case '已完成': {
-          if (!isAgent) {
-            if (status === '已完成') {
-              return 'custom-finish'
-            } else {
-              return 'custom-wait'
-            }
-          }
-          return 'custom-finish'
-        }
-        case '服务中': {
+      const taskStatusValue = this.agentOrder.baseInformation.task.taskStatusValue
+      switch (taskStatusValue) {
+        case '1': {
           return 'custom-process'
         }
-        case '交接中': {
+        case '2': {
+          return 'custom-finish'
+        }
+        case '3': {
           return 'custom-jiaojie-zhong'
         }
-        default: {
-          if (description.startsWith('2')) {
-            return 'custom-process'
-          }
-          return 'custom-forbiden'
+        case '4': {
+          return 'custom-stop'
         }
       }
     },
@@ -583,7 +572,7 @@ export default {
     border: 1px solid #e9e9e9;
   }
   .custom-finish {
-    background-color: #0099cc !important;
+    background-color: #409EFF !important;
   }
   .custom-process {
     background-color: #00cc01 !important;
@@ -593,6 +582,9 @@ export default {
   }
   .custom-jiaojie-zhong {
     background-color: #E6A23C !important;
+  }
+  .custom-stop {
+    background-color: #f70707 !important;
   }
 }
 

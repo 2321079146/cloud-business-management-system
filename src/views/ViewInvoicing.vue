@@ -65,6 +65,18 @@
             </el-form-item>
           </el-col>
         </el-row>
+        <el-row v-if="invoice.invoiceStateValue === '2'">
+          <el-col :span="12">
+            <el-form-item label="审核人: " prop="name">
+              <span>{{invoice.confirmUserName}}</span>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="审核时间: " prop="name">
+              <span>{{invoice.confirmTime}}</span>
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-row>
           <el-col :span="12">
             <el-form-item label="申请人: " prop="name">
@@ -78,9 +90,14 @@
           </el-col>
         </el-row>
         <el-row>
-          <el-col :span="24">
+          <el-col :span="12">
             <el-form-item label="备注信息: " prop="name">
               <span>{{invoice.invoiceRemark}}</span>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12" v-if="invoice.invoiceStateValue === '2'">
+            <el-form-item label="驳回原因: " prop="name">
+              <span>{{invoice.rejectReason}}</span>
             </el-form-item>
           </el-col>
         </el-row>

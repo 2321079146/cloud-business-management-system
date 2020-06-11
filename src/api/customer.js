@@ -18,12 +18,19 @@ const getCustomers = ({ params, data }) => request({
   data
 })
 
+const getCustomerAll = () => request({
+  url: '/customer/all',
+  method: 'GET'
+})
+
 const getCustomerDetail = customerId => request({
   url: `/customer/detail/${customerId}`
 })
+
 export {
   createCustomer,
   getCustomers,
   getCustomerDetail,
-  updateCustomer
+  updateCustomer,
+  getCustomerAll
 }

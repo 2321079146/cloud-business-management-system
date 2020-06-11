@@ -75,7 +75,7 @@
         </el-col>
       </el-row>
     </div>
-    <el-button>取消</el-button>
+    <el-button  @click="cancelChannel">取消</el-button>
     <el-button type="primary" :loading="isChannelProvider" @click="handelCreteChannelButtonClick">保存</el-button><br><br><br><br>
   </div>
 </template>
@@ -113,6 +113,9 @@ export default {
     }
   },
   methods: {
+    cancelChannel () {
+      this.$router.push({ path: '/channel-dealer-management' })
+    },
     handleChannelBelong (value) {
       this.createChannelForm.channelBelongName = this.getChannelTypeName(value)
     },
